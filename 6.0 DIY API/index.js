@@ -28,14 +28,71 @@ app.get("/filter", (req, res) => {
 });
 
 //4. POST a new joke
+app.post("/jokes", (req, res) => {
+  const newJoke = {
+    id: jokes[jokes.length - 1].id + 1,
+    jokeText: req.body.text,
+    jokeType: req.body.type,
+  };
+  jokes.push(newJoke);
+  res.status(200).json(newJoke);
+});
 
 //5. PUT a joke
+app.put("/jokes/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const jokeIndex = jokes.findIndex((joke) => joke.id === id);
+  const updatedJoke = {
+    id: id,
+    jokeText: req.body.text,
+    jokeType: req.body.type,
+  };
+  jokes[jokeIndex] = updatedJoke;
+  console.log(jokes[jokeIndex]);
+  res.status(200).json(updatedJoke);
+});
 
 //6. PATCH a joke
-
-//7. DELETE Specific joke
+app.patch("/jokes/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const jokeIndex = jokes.findIndex((joke) => joke.id === id);
+  Object.entries(req.body).forEach((entry) => {
+    const [key, value] = entry;
+    switch (key) {
+      case "text":
+        jokes[jokeIndex].jokeText = value;
+        break;
+      case "type":
+        jokes[jokeIndex].jokeType = value;
+    }
+  });
+  res.status(200).json(jokes[jokeIndex]);
+});
 
 //8. DELETE All jokes
+app.delete("/jokes/all", (req, res) => {
+  if (req.query.key && masterKey === req.query.key) {
+    jokes = [];
+    res.status(200).send("OK");
+  } else {
+    res.status(404).json({ error: "UNAUTHORIZED" });
+  }
+});
+
+//7. DELETE Specific joke
+app.delete("/jokes/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const jokeIndex = jokes.findIndex((joke) => joke.id === id);
+  if (jokeIndex > -1) {
+    jokes.splice(jokeIndex, 1);
+    res.status(200).send("OK");
+  } else {
+    res
+      .status(404)
+      .json({ error: `Joke with id: ${id} not foud. No jokes were deleted.` });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Successfully started server on port ${port}.`);
