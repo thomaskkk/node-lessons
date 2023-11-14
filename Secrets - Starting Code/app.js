@@ -1,7 +1,8 @@
+import "dotenv/config";
 import express from "express";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
-import "dotenv/config";
+import encrypt from "mongoose-encryption";
 
 const app = express();
 const port = 3000;
@@ -11,10 +12,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.MONGODB_URL);
 
-const userSchema = {
+const userSchema = new mongoose.Schema({
   email: String,
   password: String,
-};
+});
+
+const secret = process.env.DB_CRYPT_SECRET;
+userSchema.plugin(encrypt, {
+  secret: secret,
+  encryptedFields: ["password"],
+});
 
 const User = new mongoose.model("User", userSchema);
 
@@ -48,11 +55,12 @@ app.post("/login", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  User.findOne({ email: username, password: password })
+  User.findOne({ email: username })
     .then((foundUser) => {
-      console.log(foundUser);
-      if (foundUser) {
+      if (foundUser && foundUser.password === password) {
         res.render("secrets.ejs");
+      } else {
+        console.log("Invalid password");
       }
     })
     .catch((err) => {
